@@ -6,9 +6,25 @@ set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(${PROJECT_NAME} source/main.c)
 target_include_directories(${PROJECT_NAME} PRIVATE header)
-target_compile_options(${PROJECT_NAME} PRIVATE
-    -O2 -Werror -Wall -Wextra -pedantic -Wfloat-equal -Wundef
-    -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wstrict-overflow=5
-    -Wwrite-strings -Waggregate-return -Wcast-qual -Wswitch-default -Wswitch-enum
-    -Wconversion -Wunreachable-code
+target_compile_options(
+	${PROJECT_NAME}
+	PRIVATE -O2
+			-Werror
+			-Wall
+			-Wextra
+			-pedantic
+			-Wfloat-equal
+			-Wundef
+			-Wshadow
+			-Wpointer-arith
+			-Wcast-align
+			-Wstrict-prototypes
+			-Wstrict-overflow=5
+			-Wwrite-strings
+			-Waggregate-return
+			-Wcast-qual
+			-Wswitch-default
+			-Wswitch-enum
+			-Wconversion
+			-Wunreachable-code
 )

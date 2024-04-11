@@ -1,0 +1,14 @@
+UseTab: Always
+IndentWidth: 4
+TabWidth: 4
+
+AlignAfterOpenBracket: BlockIndent
+
+IndentCaseLabels: true
+  
+Cpp11BracedListStyle: false
+
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+BinPackParameters: false
