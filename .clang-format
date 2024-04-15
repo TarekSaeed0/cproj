@@ -12,3 +12,5 @@ AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 BinPackArguments: false
 BinPackParameters: false
+
+PenaltyReturnTypeOnItsOwnLine: 200

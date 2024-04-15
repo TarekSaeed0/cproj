@@ -126,7 +126,9 @@ int main(int argc, char **argv) {
 			"AllowAllArgumentsOnNextLine: false\n"
 			"AllowAllParametersOfDeclarationOnNextLine: false\n"
 			"BinPackArguments: false\n"
-			"BinPackParameters: false\n",
+			"BinPackParameters: false\n"
+			"\n"
+			"PenaltyReturnTypeOnItsOwnLine: 200\n",
 			project_clang_format_file
 		) > 0
 	);
