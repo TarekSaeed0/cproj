@@ -3,11 +3,14 @@ IndentWidth: 4
 TabWidth: 4
 
 AlignAfterOpenBracket: BlockIndent
-AllowShortBlocksOnASingleLine: Empty
-AllowShortFunctionsOnASingleLine: None
-AllowShortIfStatementsOnASingleLine: Never
 
+AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
 IndentCaseLabels: true
   
 Cpp11BracedListStyle: false
