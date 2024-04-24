@@ -7,14 +7,11 @@
 
 int main(int argc, char **argv) {
 	assert(argc == 2);
-	const char *project_path = argv[1];
+	const char *project_path = argv[1][0] != '\0' ? argv[1] : ".";
 	assert(mkdir(project_path, S_IRWXU | S_IRWXG | S_IRWXO) != -1);
 
 	const char *project_name = strrchr(project_path, '/');
-	if (project_name != NULL)
-		++project_name;
-	else
-		project_name = project_path;
+	project_name = project_name != NULL ? project_name + 1 : project_path;
 
 	FILE *cmake_version_command_file = popen("cmake --version", "r");
 	assert(cmake_version_command_file != NULL);
@@ -118,9 +115,13 @@ int main(int argc, char **argv) {
 			"TabWidth: 4\n"
 			"\n"
 			"AlignAfterOpenBracket: BlockIndent\n"
+			"AllowShortBlocksOnASingleLine: Empty\n"
+			"AllowShortFunctionsOnASingleLine: None\n"
+			"AllowShortIfStatementsOnASingleLine: Never\n"
 			"\n"
+			"AllowShortCaseLabelsOnASingleLine: true\n"
 			"IndentCaseLabels: true\n"
-			"  \n"
+			"\n"
 			"Cpp11BracedListStyle: false\n"
 			"\n"
 			"AllowAllArgumentsOnNextLine: false\n"
@@ -128,7 +129,7 @@ int main(int argc, char **argv) {
 			"BinPackArguments: false\n"
 			"BinPackParameters: false\n"
 			"\n"
-			"PenaltyReturnTypeOnItsOwnLine: 200\n",
+			"PenaltyReturnTypeOnItsOwnLine: 5000\n",
 			project_clang_format_file
 		) > 0
 	);
