@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 		fprintf(
 			project_cmakelists_txt_file,
 			"cmake_minimum_required(VERSION %s)\n"
-			"project(%s)\n"
+			"project(%s VERSION 1.0 LANGUAGES C)\n"
 			"\n"
 			"set(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n"
 			"set(CMAKE_BUILD_TYPE Debug)\n"
@@ -110,6 +110,8 @@ int main(int argc, char **argv) {
 	free(project_clang_format_path);
 	assert(
 		fputs(
+			"ColumnLimit: 100\n"
+			""
 			"UseTab: Always\n"
 			"IndentWidth: 4\n"
 			"TabWidth: 4\n"
