@@ -69,7 +69,6 @@ int main(int argc, char **argv) {
 			"			-Waggregate-return\n"
 			"			-Wcast-qual\n"
 			"			-Wswitch-default\n"
-			"			-Wswitch-enum\n"
 			"			-Wconversion\n"
 			"			-Wunreachable-code\n"
 			")\n",

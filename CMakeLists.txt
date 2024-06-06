@@ -30,7 +30,6 @@ target_compile_options(
 			-Waggregate-return
 			-Wcast-qual
 			-Wswitch-default
-			-Wswitch-enum
 			-Wconversion
 			-Wunreachable-code
 )
