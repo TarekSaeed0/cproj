@@ -4,5 +4,4 @@ Checks: "
   -llvmlibc-*,
   -android-*,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
-  -readability-function-cognitive-complexity,
 "

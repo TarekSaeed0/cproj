@@ -8,6 +8,8 @@
 #define array_length(array) (sizeof(array) / sizeof(*(array)))
 
 char *concatenate_strings(const char *const *strings, size_t count) {
+	assert(strings != NULL);
+
 	size_t total_length = 0;
 	for (size_t i = 0; i < count; i++) {
 		total_length += strlen(strings[i]);
@@ -60,6 +62,8 @@ char *get_cmake_version(void) {
 }
 
 int create_project_directory(const char *project_path) {
+	assert(project_path != NULL);
+
 	if (mkdir(project_path, S_IRWXU | S_IRWXG | S_IRWXO) == -1) {
 		return EXIT_FAILURE;
 	}
@@ -67,6 +71,8 @@ int create_project_directory(const char *project_path) {
 	return EXIT_SUCCESS;
 }
 int create_project_subdirectories(const char *project_path) {
+	assert(project_path != NULL);
+
 	static const char *subdirectories[] = { "source", "resource", "header", "library" };
 	for (size_t i = 0; i < array_length(subdirectories); i++) {
 		char *path = concatenate_strings(project_path, "/", subdirectories[i]);
@@ -85,6 +91,8 @@ int create_project_subdirectories(const char *project_path) {
 	return EXIT_SUCCESS;
 }
 int create_project_cmakelists_txt(const char *project_path) {
+	assert(project_path != NULL);
+
 	const char *project_name = strrchr(project_path, '/');
 	if (project_name != NULL) {
 		project_name++;
@@ -155,6 +163,8 @@ int create_project_cmakelists_txt(const char *project_path) {
 	return EXIT_SUCCESS;
 }
 int create_project_cmake_format_py(const char *project_path) {
+	assert(project_path != NULL);
+
 	char *path = concatenate_strings(project_path, "/", ".cmake-format.py");
 	if (path == NULL) {
 		return EXIT_FAILURE;
@@ -183,6 +193,8 @@ int create_project_cmake_format_py(const char *project_path) {
 	return EXIT_SUCCESS;
 }
 int create_project_source_main_c(const char *project_path) {
+	assert(project_path != NULL);
+
 	char *path = concatenate_strings(project_path, "/", "source/main.c");
 	if (path == NULL) {
 		return EXIT_FAILURE;
@@ -212,6 +224,8 @@ int create_project_source_main_c(const char *project_path) {
 	return EXIT_SUCCESS;
 }
 int create_project_clang_format(const char *project_path) {
+	assert(project_path != NULL);
+
 	char *path = concatenate_strings(project_path, "/", ".clang-format");
 	if (path == NULL) {
 		return EXIT_FAILURE;
@@ -261,6 +275,8 @@ int create_project_clang_format(const char *project_path) {
 	return EXIT_SUCCESS;
 }
 int create_project_clang_tidy(const char *project_path) {
+	assert(project_path != NULL);
+
 	char *path = concatenate_strings(project_path, "/", ".clang-tidy");
 	if (path == NULL) {
 		return EXIT_FAILURE;
@@ -279,7 +295,6 @@ int create_project_clang_tidy(const char *project_path) {
 			"  -llvmlibc-*,\n"
 			"  -android-*,\n"
 			"  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,\n"
-			"  -readability-function-cognitive-complexity,\n"
 			"\"\n",
 			file
 		) < 0) {
@@ -293,6 +308,8 @@ int create_project_clang_tidy(const char *project_path) {
 	return EXIT_SUCCESS;
 }
 int create_project_build(const char *project_path) {
+	assert(project_path != NULL);
+
 	char *path = concatenate_strings(project_path, "/", "build");
 	if (path == NULL) {
 		return EXIT_FAILURE;
@@ -314,6 +331,8 @@ int create_project_build(const char *project_path) {
 	return EXIT_SUCCESS;
 }
 int create_project_compile_commands_json(const char *project_path) {
+	assert(project_path != NULL);
+
 	char *path = concatenate_strings(project_path, "/", "/compile_commands.json");
 	if (path == NULL) {
 		return EXIT_FAILURE;
@@ -329,6 +348,8 @@ int create_project_compile_commands_json(const char *project_path) {
 	return EXIT_SUCCESS;
 }
 int create_project(const char *project_path) {
+	assert(project_path != NULL);
+
 	static int (*const steps[])(const char *) = {
 		create_project_directory,
 		create_project_subdirectories,
