@@ -5,43 +5,110 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-int main(int argc, char **argv) {
-	assert(argc == 2);
-	const char *project_path = argv[1][0] != '\0' ? argv[1] : ".";
-	assert(mkdir(project_path, S_IRWXU | S_IRWXG | S_IRWXO) != -1);
+#define array_length(array) (sizeof(array) / sizeof(*(array)))
 
-	const char *project_name = strrchr(project_path, '/');
-	project_name = project_name != NULL ? project_name + 1 : project_path;
+char *concatenate_strings(const char *const *strings, size_t count) {
+	size_t total_length = 0;
+	for (size_t i = 0; i < count; i++) {
+		total_length += strlen(strings[i]);
+	}
 
-	FILE *cmake_version_command_file = popen("cmake --version", "r");
-	assert(cmake_version_command_file != NULL);
-	char cmake_version_command_buffer[64];
-	assert(
-		fgets(
-			cmake_version_command_buffer,
-			sizeof cmake_version_command_buffer,
-			cmake_version_command_file
-		) != NULL
-	);
-	char *cmake_version = strstr(cmake_version_command_buffer, "version ");
-	assert(cmake_version != NULL);
+	char *total = malloc(total_length + 1);
+	if (total == NULL) {
+		return NULL;
+	}
+	total[0] = '\0';
+
+	for (size_t i = 0; i < count; i++) {
+		strlcat(total, strings[i], total_length + 1);
+	}
+
+	return total;
+}
+#define concatenate_strings(...)                                                                   \
+	concatenate_strings(                                                                           \
+		(const char *[]){ __VA_ARGS__ },                                                           \
+		array_length(((const char *[]){ __VA_ARGS__ }))                                            \
+	)
+
+char *get_cmake_version(void) {
+	FILE *file = popen("cmake --version", "r");
+	if (file == NULL) {
+		return NULL;
+	}
+
+	enum {
+		MAXIMUM_BUFFER_SIZE = 256
+	};
+	char buffer[MAXIMUM_BUFFER_SIZE];
+	if (fgets(buffer, sizeof(buffer), file) == NULL) {
+		return NULL;
+	}
+	buffer[strcspn(buffer, "\n")] = '\0';
+
+	char *cmake_version = strstr(buffer, "version ");
+	if (cmake_version == NULL) {
+		return NULL;
+	}
 	cmake_version += strlen("version ");
-	cmake_version[strcspn(cmake_version, "\n")] = '\0';
-	assert(pclose(cmake_version_command_file) != -1);
 
-	char *project_cmakelists_txt_path =
-		malloc(strlen(project_path) + strlen("/CMakeLists.txt") + 1);
-	assert(project_cmakelists_txt_path != NULL);
-	strcat(
-		strcpy(project_cmakelists_txt_path, project_path),
-		"/CMakeLists.txt"
-	);
-	FILE *project_cmakelists_txt_file = fopen(project_cmakelists_txt_path, "w");
-	assert(project_cmakelists_txt_file != NULL);
-	free(project_cmakelists_txt_path);
-	assert(
-		fprintf(
-			project_cmakelists_txt_file,
+	if (pclose(file) == -1) {
+		return NULL;
+	}
+
+	return strdup(cmake_version);
+}
+
+int create_project_directory(const char *project_path) {
+	if (mkdir(project_path, S_IRWXU | S_IRWXG | S_IRWXO) == -1) {
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}
+int create_project_subdirectories(const char *project_path) {
+	static const char *subdirectories[] = { "source", "resource", "header", "library" };
+	for (size_t i = 0; i < array_length(subdirectories); i++) {
+		char *path = concatenate_strings(project_path, "/", subdirectories[i]);
+		if (path == NULL) {
+			return EXIT_FAILURE;
+		}
+
+		if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) == -1) {
+			free(path);
+			return EXIT_FAILURE;
+		}
+
+		free(path);
+	}
+
+	return EXIT_SUCCESS;
+}
+int create_project_cmakelists_txt(const char *project_path) {
+	const char *project_name = strrchr(project_path, '/');
+	if (project_name != NULL) {
+		project_name++;
+	} else {
+		project_name = project_path;
+	}
+
+	char *cmake_version = get_cmake_version();
+
+	char *path = concatenate_strings(project_path, "/", "CMakeLists.txt");
+	if (path == NULL) {
+		free(cmake_version);
+		return EXIT_FAILURE;
+	}
+
+	FILE *file = fopen(path, "w");
+	free(path);
+	if (file == NULL) {
+		free(cmake_version);
+		return EXIT_FAILURE;
+	}
+
+	if (fprintf(
+			file,
 			"cmake_minimum_required(VERSION %s)\n"
 			"project(%s VERSION 1.0 LANGUAGES C)\n"
 			"\n"
@@ -74,41 +141,89 @@ int main(int argc, char **argv) {
 			")\n",
 			cmake_version,
 			project_name
-		) > 0
-	);
-	assert(fclose(project_cmakelists_txt_file) != EOF);
+		) < 0) {
+		free(cmake_version);
+		return EXIT_FAILURE;
+	}
 
-	char *project_cmake_format_py_path =
-		malloc(strlen(project_path) + strlen("/.cmake-format.py") + 1);
-	assert(project_cmake_format_py_path != NULL);
-	strcat(
-		strcpy(project_cmake_format_py_path, project_path),
-		"/.cmake-format.py"
-	);
-	FILE *project_cmake_format_py_file =
-		fopen(project_cmake_format_py_path, "w");
-	assert(project_cmake_format_py_file != NULL);
-	free(project_cmake_format_py_path);
-	assert(
-		fputs(
+	free(cmake_version);
+
+	if (fclose(file) == EOF) {
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}
+int create_project_cmake_format_py(const char *project_path) {
+	char *path = concatenate_strings(project_path, "/", ".cmake-format.py");
+	if (path == NULL) {
+		return EXIT_FAILURE;
+	}
+
+	FILE *file = fopen(path, "w");
+	free(path);
+	if (file == NULL) {
+		return EXIT_FAILURE;
+	}
+
+	if (fputs(
 			"with section(\"format\"):\n"
 			"    tab_size = 4\n"
 			"    use_tabchars = True\n"
 			"    dangle_parens = True\n",
-			project_cmake_format_py_file
-		) > 0
-	);
-	assert(fclose(project_cmake_format_py_file) != EOF);
+			file
+		) < 0) {
+		return EXIT_FAILURE;
+	}
 
-	char *project_clang_format_path =
-		malloc(strlen(project_path) + strlen("/.clang-format") + 1);
-	assert(project_clang_format_path != NULL);
-	strcat(strcpy(project_clang_format_path, project_path), "/.clang-format");
-	FILE *project_clang_format_file = fopen(project_clang_format_path, "w");
-	assert(project_clang_format_file != NULL);
-	free(project_clang_format_path);
-	assert(
-		fputs(
+	if (fclose(file) == EOF) {
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}
+int create_project_source_main_c(const char *project_path) {
+	char *path = concatenate_strings(project_path, "/", "source/main.c");
+	if (path == NULL) {
+		return EXIT_FAILURE;
+	}
+
+	FILE *file = fopen(path, "w");
+	free(path);
+	if (file == NULL) {
+		return EXIT_FAILURE;
+	}
+
+	if (fprintf(
+			file,
+			"#include <stdio.h>\n"
+			"\n"
+			"int main(void) {\n"
+			"	printf(\"Hello, World!\\n\");\n"
+			"}\n"
+		) < 0) {
+		return EXIT_FAILURE;
+	}
+
+	if (fclose(file) == EOF) {
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}
+int create_project_clang_format(const char *project_path) {
+	char *path = concatenate_strings(project_path, "/", ".clang-format");
+	if (path == NULL) {
+		return EXIT_FAILURE;
+	}
+
+	FILE *file = fopen(path, "w");
+	free(path);
+	if (file == NULL) {
+		return EXIT_FAILURE;
+	}
+
+	if (fputs(
 			"ColumnLimit: 100\n"
 			""
 			"UseTab: Always\n"
@@ -134,96 +249,119 @@ int main(int argc, char **argv) {
 			"BinPackParameters: false\n"
 			"\n"
 			"PenaltyReturnTypeOnItsOwnLine: 5000\n",
-			project_clang_format_file
-		) > 0
-	);
-	assert(fclose(project_clang_format_file) != EOF);
+			file
+		) < 0) {
+		return EXIT_FAILURE;
+	}
 
-	char *project_compile_commands_json_path =
-		malloc(strlen(project_path) + strlen("/compile_commands.json") + 1);
-	assert(project_compile_commands_json_path != NULL);
-	strcat(
-		strcpy(project_compile_commands_json_path, project_path),
-		"/compile_commands.json"
-	);
-	assert(
-		symlink(
-			"build/compile_commands.json",
-			project_compile_commands_json_path
-		) != -1
-	);
-	free(project_compile_commands_json_path);
+	if (fclose(file) == EOF) {
+		return EXIT_FAILURE;
+	}
 
-	char *project_source_path =
-		malloc(strlen(project_path) + strlen("/source") + 1);
-	assert(project_source_path != NULL);
-	strcat(strcpy(project_source_path, project_path), "/source");
-	assert(mkdir(project_source_path, S_IRWXU | S_IRWXG | S_IRWXO) != -1);
+	return EXIT_SUCCESS;
+}
+int create_project_clang_tidy(const char *project_path) {
+	char *path = concatenate_strings(project_path, "/", ".clang-tidy");
+	if (path == NULL) {
+		return EXIT_FAILURE;
+	}
 
-	char *project_source_main_c_path =
-		malloc(strlen(project_source_path) + strlen("/main.c") + 1);
-	assert(project_source_main_c_path != NULL);
-	strcat(strcpy(project_source_main_c_path, project_source_path), "/main.c");
-	free(project_source_path);
-	FILE *project_source_main_c_file = fopen(project_source_main_c_path, "w");
-	assert(project_source_main_c_file != NULL);
-	free(project_source_main_c_path);
-	assert(
-		fprintf(
-			project_source_main_c_file,
-			"#include <stdio.h>\n"
-			"\n"
-			"int main(void) {\n"
-			"	printf(\"Hello, World!\\n\");\n"
-			"}\n"
-		) > 0
-	);
-	assert(fclose(project_source_main_c_file) != EOF);
+	FILE *file = fopen(path, "w");
+	free(path);
+	if (file == NULL) {
+		return EXIT_FAILURE;
+	}
 
-	char *project_resource_path =
-		malloc(strlen(project_path) + strlen("/resource") + 1);
-	assert(project_resource_path != NULL);
-	strcat(strcpy(project_resource_path, project_path), "/resource");
-	assert(mkdir(project_resource_path, S_IRWXU | S_IRWXG | S_IRWXO) != -1);
-	free(project_resource_path);
+	if (fputs(
+			"Checks: \"\n"
+			"  *,\n"
+			"  -altera-*,\n"
+			"  -llvmlibc-*,\n"
+			"  -android-*,\n"
+			"  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,\n"
+			"  -readability-function-cognitive-complexity,\n"
+			"\"\n",
+			file
+		) < 0) {
+		return EXIT_FAILURE;
+	}
 
-	char *project_header_path =
-		malloc(strlen(project_path) + strlen("/header") + 1);
-	assert(project_header_path != NULL);
-	strcat(strcpy(project_header_path, project_path), "/header");
-	assert(mkdir(project_header_path, S_IRWXU | S_IRWXG | S_IRWXO) != -1);
-	free(project_header_path);
+	if (fclose(file) == EOF) {
+		return EXIT_FAILURE;
+	}
 
-	char *project_library_path =
-		malloc(strlen(project_path) + strlen("/library") + 1);
-	assert(project_library_path != NULL);
-	strcat(strcpy(project_library_path, project_path), "/library");
-	assert(mkdir(project_library_path, S_IRWXU | S_IRWXG | S_IRWXO) != -1);
-	free(project_library_path);
+	return EXIT_SUCCESS;
+}
+int create_project_build(const char *project_path) {
+	char *path = concatenate_strings(project_path, "/", "build");
+	if (path == NULL) {
+		return EXIT_FAILURE;
+	}
 
-	char *project_build_path =
-		malloc(strlen(project_path) + strlen("/build") + 1);
-	assert(project_build_path != NULL);
-	strcat(strcpy(project_build_path, project_path), "/build");
+	char *command = concatenate_strings("cmake -S ", project_path, " -B ", path, " > /dev/null");
+	free(path);
+	if (command == NULL) {
+		return EXIT_FAILURE;
+	}
 
-	char *cmake_build_command = malloc(
-		strlen("cmake -S ") + strlen(project_path) + strlen(" -B ") +
-		strlen(project_build_path) + strlen(" > /dev/null") + 1
-	);
-	assert(cmake_build_command != NULL);
-	strcat(
-		strcat(
-			strcat(
-				strcat(strcpy(cmake_build_command, "cmake -S "), project_path),
-				" -B "
-			),
-			project_build_path
-		),
-		" > /dev/null"
-	);
-	free(project_build_path);
-	assert(system(cmake_build_command) == 0);
-	free(cmake_build_command);
+	if (system(command) != 0) {
+		free(command);
+		return EXIT_FAILURE;
+	}
+
+	free(command);
+
+	return EXIT_SUCCESS;
+}
+int create_project_compile_commands_json(const char *project_path) {
+	char *path = concatenate_strings(project_path, "/", "/compile_commands.json");
+	if (path == NULL) {
+		return EXIT_FAILURE;
+	}
+
+	if (symlink("build/compile_commands.json", path) == -1) {
+		free(path);
+		return EXIT_FAILURE;
+	}
+
+	free(path);
+
+	return EXIT_SUCCESS;
+}
+int create_project(const char *project_path) {
+	static int (*const steps[])(const char *) = {
+		create_project_directory,
+		create_project_subdirectories,
+		create_project_cmakelists_txt,
+		create_project_cmake_format_py,
+		create_project_source_main_c,
+		create_project_clang_format,
+		create_project_clang_tidy,
+		create_project_build,
+		create_project_compile_commands_json,
+	};
+	for (size_t i = 0; i < array_length(steps); i++) {
+		if (steps[i](project_path) == EXIT_FAILURE) {
+			return EXIT_FAILURE;
+		}
+	}
+
+	return EXIT_SUCCESS;
+}
+
+int main(int argc, char *argv[]) {
+	if (argc != 2) {
+		return EXIT_FAILURE;
+	}
+
+	const char *project_path = argv[1];
+	if (project_path[0] == '\0') {
+		project_path = ".";
+	}
+
+	if (create_project(project_path) == EXIT_FAILURE) {
+		return EXIT_FAILURE;
+	}
 
 	return EXIT_SUCCESS;
 }
