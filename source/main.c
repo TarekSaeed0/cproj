@@ -192,6 +192,30 @@ int create_project_cmake_format_py(const char *project_path) {
 
 	return EXIT_SUCCESS;
 }
+int create_project_cmakelintrc(const char *project_path) {
+	assert(project_path != NULL);
+
+	char *path = concatenate_strings(project_path, "/", ".cmakelintrc");
+	if (path == NULL) {
+		return EXIT_FAILURE;
+	}
+
+	FILE *file = fopen(path, "w");
+	free(path);
+	if (file == NULL) {
+		return EXIT_FAILURE;
+	}
+
+	if (fputs("filter=-whitespace/tabs\n", file) < 0) {
+		return EXIT_FAILURE;
+	}
+
+	if (fclose(file) == EOF) {
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}
 int create_project_source_main_c(const char *project_path) {
 	assert(project_path != NULL);
 
@@ -351,15 +375,11 @@ int create_project(const char *project_path) {
 	assert(project_path != NULL);
 
 	static int (*const steps[])(const char *) = {
-		create_project_directory,
-		create_project_subdirectories,
-		create_project_cmakelists_txt,
-		create_project_cmake_format_py,
-		create_project_source_main_c,
-		create_project_clang_format,
-		create_project_clang_tidy,
-		create_project_build,
-		create_project_compile_commands_json,
+		create_project_directory,	   create_project_subdirectories,
+		create_project_cmakelists_txt, create_project_cmake_format_py,
+		create_project_cmakelintrc,	   create_project_source_main_c,
+		create_project_clang_format,   create_project_clang_tidy,
+		create_project_build,		   create_project_compile_commands_json,
 	};
 	for (size_t i = 0; i < array_length(steps); i++) {
 		if (steps[i](project_path) == EXIT_FAILURE) {

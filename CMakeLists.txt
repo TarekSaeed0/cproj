@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25.0)
 project(
 	cproj
 	VERSION 1.0
-	DESCRIPTION "Simple tool to create new c project"
+	DESCRIPTION "Simple tool to create new c projects"
 	LANGUAGES C
 )
 
