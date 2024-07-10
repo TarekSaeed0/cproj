@@ -141,7 +141,6 @@ int create_project_cmakelists_txt(const char *project_path) {
 			"			-Wstrict-prototypes\n"
 			"			-Wstrict-overflow=5\n"
 			"			-Wwrite-strings\n"
-			"			-Waggregate-return\n"
 			"			-Wcast-qual\n"
 			"			-Wswitch-default\n"
 			"			-Wconversion\n"
