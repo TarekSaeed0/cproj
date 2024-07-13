@@ -73,7 +73,7 @@ int create_project_directory(const char *project_path) {
 int create_project_subdirectories(const char *project_path) {
 	assert(project_path != NULL);
 
-	static const char *subdirectories[] = { "source", "resource", "header", "library" };
+	static const char *subdirectories[] = { "src", "include", "lib", "data" };
 	for (size_t i = 0; i < array_length(subdirectories); i++) {
 		char *path = concatenate_strings(project_path, "/", subdirectories[i]);
 		if (path == NULL) {
@@ -123,7 +123,7 @@ int create_project_cmakelists_txt(const char *project_path) {
 			"set(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n"
 			"set(CMAKE_BUILD_TYPE Debug)\n"
 			"\n"
-			"add_executable(${PROJECT_NAME} source/main.c)\n"
+			"add_executable(${PROJECT_NAME} src/main.c)\n"
 			"target_include_directories(${PROJECT_NAME} PRIVATE header)\n"
 			"target_link_directories(${PROJECT_NAME} PRIVATE library)\n"
 			"target_compile_options(\n"
@@ -215,10 +215,10 @@ int create_project_cmakelintrc(const char *project_path) {
 
 	return EXIT_SUCCESS;
 }
-int create_project_source_main_c(const char *project_path) {
+int create_project_src_main_c(const char *project_path) {
 	assert(project_path != NULL);
 
-	char *path = concatenate_strings(project_path, "/", "source/main.c");
+	char *path = concatenate_strings(project_path, "/", "src/main.c");
 	if (path == NULL) {
 		return EXIT_FAILURE;
 	}
@@ -376,7 +376,7 @@ int create_project(const char *project_path) {
 	static int (*const steps[])(const char *) = {
 		create_project_directory,	   create_project_subdirectories,
 		create_project_cmakelists_txt, create_project_cmake_format_py,
-		create_project_cmakelintrc,	   create_project_source_main_c,
+		create_project_cmakelintrc,	   create_project_src_main_c,
 		create_project_clang_format,   create_project_clang_tidy,
 		create_project_build,		   create_project_compile_commands_json,
 	};
