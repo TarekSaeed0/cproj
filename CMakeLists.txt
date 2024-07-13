@@ -25,7 +25,6 @@ target_compile_options(
 			-Wstrict-prototypes
 			-Wstrict-overflow=5
 			-Wwrite-strings
-			-Waggregate-return
 			-Wcast-qual
 			-Wswitch-default
 			-Wconversion
